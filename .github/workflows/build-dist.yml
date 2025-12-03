@@ -34,8 +34,11 @@ jobs:
         # Create or checkout dist branch
         git checkout -B dist
         
-        # Modify .gitignore to allow dist folder
-        sed -i 's/^dist\/\*\*\/\*$/# dist\/\*\*\/\* - Commented out on dist branch to commit build artifacts/' .gitignore
+        # Modify .gitignore to allow dist folder (portable sed approach)
+        if grep -q '^dist/\*\*/\*' .gitignore; then
+          sed -i.bak 's|^dist/\*\*/\*|# dist/\*\*/\* - Commented out on dist branch to commit build artifacts|' .gitignore
+          rm -f .gitignore.bak
+        fi
         
         # Add all files including dist
         git add -f .gitignore dist/
