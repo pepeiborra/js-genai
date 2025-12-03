@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'fs';
+import * as https from 'https';
+import * as os from 'os';
+import * as path from 'path';
 import {setDefaultBaseUrls} from '../../../src/_base_url.js';
 import {NodeUploader} from '../../../src/node/_node_uploader.js';
 import {GoogleGenAI} from '../../../src/node/node_client.js';
@@ -17,6 +21,8 @@ describe('Client', () => {
     delete process.env['GOOGLE_CLOUD_LOCATION'];
     delete process.env['GOOGLE_GEMINI_BASE_URL'];
     delete process.env['GOOGLE_VERTEX_BASE_URL'];
+    delete process.env['GEMINI_CLIENT_CERT'];
+    delete process.env['GEMINI_CLIENT_KEY'];
 
     setDefaultBaseUrls({});
   });
@@ -403,5 +409,69 @@ describe('Client', () => {
     expect(client['apiKey']).toBe('vertexai_api_key');
     expect(client['project']).toBeUndefined();
     expect(client['location']).toBeUndefined();
+  });
+
+  describe('mTLS support', () => {
+    it('should not configure mTLS when environment variables are not set', () => {
+      const client = new GoogleGenAI({});
+      expect(client['httpOptions']?.dispatcher).toBeUndefined();
+    });
+
+    it('should not configure mTLS when only GEMINI_CLIENT_CERT is set', () => {
+      process.env['GEMINI_CLIENT_CERT'] = '/path/to/cert.pem';
+      const client = new GoogleGenAI({});
+      expect(client['httpOptions']?.dispatcher).toBeUndefined();
+    });
+
+    it('should not configure mTLS when only GEMINI_CLIENT_KEY is set', () => {
+      process.env['GEMINI_CLIENT_KEY'] = '/path/to/key.pem';
+      const client = new GoogleGenAI({});
+      expect(client['httpOptions']?.dispatcher).toBeUndefined();
+    });
+
+    it('should throw error when GEMINI_CLIENT_CERT file does not exist', () => {
+      process.env['GEMINI_CLIENT_CERT'] = '/nonexistent/cert.pem';
+      process.env['GEMINI_CLIENT_KEY'] = '/nonexistent/key.pem';
+      
+      expect(() => {
+        new GoogleGenAI({});
+      }).toThrowError(/Failed to load mTLS certificates/);
+    });
+
+    it('should configure mTLS agent when valid certificate files are provided', () => {
+      // Create temporary certificate and key files
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtls-test-'));
+      const certPath = path.join(tmpDir, 'cert.pem');
+      const keyPath = path.join(tmpDir, 'key.pem');
+      
+      // Write dummy certificate and key
+      fs.writeFileSync(certPath, '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----');
+      fs.writeFileSync(keyPath, '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----');
+      
+      try {
+        process.env['GEMINI_CLIENT_CERT'] = certPath;
+        process.env['GEMINI_CLIENT_KEY'] = keyPath;
+        
+        const client = new GoogleGenAI({});
+        
+        expect(client['httpOptions']?.dispatcher).toBeDefined();
+        expect(client['httpOptions']?.dispatcher).toBeInstanceOf(https.Agent);
+      } finally {
+        // Clean up
+        fs.unlinkSync(certPath);
+        fs.unlinkSync(keyPath);
+        fs.rmdirSync(tmpDir);
+      }
+    });
+
+    it('should not override user-provided dispatcher', () => {
+      const customDispatcher = {custom: 'dispatcher'};
+      const client = new GoogleGenAI({
+        httpOptions: {
+          dispatcher: customDispatcher,
+        },
+      });
+      expect(client['httpOptions']?.dispatcher).toBe(customDispatcher);
+    });
   });
 });
