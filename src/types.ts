@@ -1572,6 +1572,9 @@ export declare interface HttpOptions {
       - VertexAI backend API docs: https://cloud.google.com/vertex-ai/docs/reference/rest
       - GeminiAPI backend API docs: https://ai.google.dev/api/rest */
   extraBody?: Record<string, unknown>;
+  /** Optional. Custom dispatcher for fetch requests (Node.js only).
+      Can be used for advanced configuration like mTLS. */
+  dispatcher?: unknown;
 }
 
 /** Schema is used to define the format of input/output data.

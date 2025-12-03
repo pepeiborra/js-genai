@@ -471,6 +471,10 @@ export class ApiClient {
         httpOptions.extraBody as Record<string, unknown>,
       );
     }
+    if (httpOptions && httpOptions.dispatcher) {
+      // @ts-expect-error dispatcher is a Node.js specific extension to RequestInit, see https://nodejs.org/api/undici.html#dispatcher
+      requestInit.dispatcher = httpOptions.dispatcher;
+    }
     requestInit.headers = await this.getHeadersInternal(httpOptions, url);
     return requestInit;
   }

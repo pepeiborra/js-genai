@@ -139,6 +139,19 @@ import {GoogleGenAI} from '@google/genai';
 const ai = new GoogleGenAI();
 ```
 
+### (Optional) (NodeJS only) mTLS Configuration:
+
+For NodeJS environments that require mutual TLS (mTLS) authentication, you can configure client certificates by setting the following environment variables:
+
+```bash
+export GEMINI_CLIENT_CERT='/path/to/client-cert.pem'
+export GEMINI_CLIENT_KEY='/path/to/client-key.pem'
+```
+
+When both `GEMINI_CLIENT_CERT` and `GEMINI_CLIENT_KEY` are set, the SDK will automatically configure an HTTPS agent with the provided client certificates for all API requests.
+
+**Note:** Both environment variables must be set for mTLS to be enabled. If only one is set, mTLS will not be configured.
+
 ## API Selection
 
 By default, the SDK uses the beta API endpoints provided by Google to support

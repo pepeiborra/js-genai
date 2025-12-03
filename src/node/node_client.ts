@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'fs';
 import {GoogleAuthOptions} from 'google-auth-library';
+import * as https from 'https';
 
 import {ApiClient} from '../_api_client.js';
 import {getBaseUrl} from '../_base_url.js';
@@ -158,6 +160,19 @@ export class GoogleGenAI {
       }
     }
 
+    // Configure mTLS if environment variables are set
+    const mtlsAgent = createMtlsAgent();
+    if (mtlsAgent) {
+      if (options.httpOptions) {
+        // Only set dispatcher if not already set by the user
+        if (!options.httpOptions.dispatcher) {
+          options.httpOptions.dispatcher = mtlsAgent;
+        }
+      } else {
+        options.httpOptions = {dispatcher: mtlsAgent};
+      }
+    }
+
     this.apiVersion = options.apiVersion;
     this.httpOptions = options.httpOptions;
     const auth = new NodeAuth({
@@ -213,4 +228,36 @@ function getApiKeyFromEnv(): string | undefined {
     );
   }
   return envGoogleApiKey || envGeminiApiKey || undefined;
+}
+
+/**
+ * Creates an mTLS-enabled HTTPS agent if GEMINI_CLIENT_CERT and GEMINI_CLIENT_KEY
+ * environment variables are set.
+ *
+ * @returns An HTTPS agent configured with client certificates, or undefined if
+ * environment variables are not set.
+ */
+function createMtlsAgent(): https.Agent | undefined {
+  const certPath = getEnv('GEMINI_CLIENT_CERT');
+  const keyPath = getEnv('GEMINI_CLIENT_KEY');
+
+  if (!certPath || !keyPath) {
+    return undefined;
+  }
+
+  try {
+    const cert = fs.readFileSync(certPath);
+    const key = fs.readFileSync(keyPath);
+
+    return new https.Agent({
+      cert,
+      key,
+      // Keep connections alive for better performance
+      keepAlive: true,
+    });
+  } catch (error) {
+    throw new Error(
+      `Failed to load mTLS certificates: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
