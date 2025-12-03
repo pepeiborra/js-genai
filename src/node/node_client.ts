@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {GoogleAuthOptions} from 'google-auth-library';
 import * as fs from 'fs';
+import {GoogleAuthOptions} from 'google-auth-library';
 import * as https from 'https';
 
 import {ApiClient} from '../_api_client.js';

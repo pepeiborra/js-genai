@@ -432,7 +432,7 @@ describe('Client', () => {
     it('should throw error when GEMINI_CLIENT_CERT file does not exist', () => {
       process.env['GEMINI_CLIENT_CERT'] = '/nonexistent/cert.pem';
       process.env['GEMINI_CLIENT_KEY'] = '/nonexistent/key.pem';
-      
+
       expect(() => {
         new GoogleGenAI({});
       }).toThrowError(/Failed to load mTLS certificates/);
@@ -443,17 +443,23 @@ describe('Client', () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtls-test-'));
       const certPath = path.join(tmpDir, 'cert.pem');
       const keyPath = path.join(tmpDir, 'key.pem');
-      
+
       // Write dummy certificate and key
-      fs.writeFileSync(certPath, '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----');
-      fs.writeFileSync(keyPath, '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----');
-      
+      fs.writeFileSync(
+        certPath,
+        '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----',
+      );
+      fs.writeFileSync(
+        keyPath,
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----',
+      );
+
       try {
         process.env['GEMINI_CLIENT_CERT'] = certPath;
         process.env['GEMINI_CLIENT_KEY'] = keyPath;
-        
+
         const client = new GoogleGenAI({});
-        
+
         expect(client['httpOptions']?.dispatcher).toBeDefined();
         expect(client['httpOptions']?.dispatcher).toBeInstanceOf(https.Agent);
       } finally {
