@@ -1,7 +1,6 @@
 *.tgz
 *.swp
 
-dist/**/*
 temp/**/*
 
 node_modules
