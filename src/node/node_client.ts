@@ -240,6 +240,7 @@ function getApiKeyFromEnv(): string | undefined {
 function createMtlsAgent(): https.Agent | undefined {
   const certPath = getEnv('GEMINI_CLIENT_CERT');
   const keyPath = getEnv('GEMINI_CLIENT_KEY');
+  const caPath = getEnv('GEMINI_CLIENT_CA');
 
   if (!certPath || !keyPath) {
     return undefined;
@@ -248,10 +249,12 @@ function createMtlsAgent(): https.Agent | undefined {
   try {
     const cert = fs.readFileSync(certPath);
     const key = fs.readFileSync(keyPath);
+    const ca = caPath ? fs.readFileSync(caPath) : undefined;
 
     return new https.Agent({
       cert,
       key,
+      ca,
       // Keep connections alive for better performance
       keepAlive: true,
     });
