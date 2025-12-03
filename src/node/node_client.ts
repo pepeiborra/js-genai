@@ -232,7 +232,8 @@ function getApiKeyFromEnv(): string | undefined {
 
 /**
  * Creates an mTLS-enabled HTTPS agent if GEMINI_CLIENT_CERT and GEMINI_CLIENT_KEY
- * environment variables are set.
+ * environment variables are set. Optionally reads a CA certificate from
+ * GEMINI_CLIENT_CA if provided.
  *
  * @returns An HTTPS agent configured with client certificates, or undefined if
  * environment variables are not set.
