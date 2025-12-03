@@ -23,6 +23,7 @@ describe('Client', () => {
     delete process.env['GOOGLE_VERTEX_BASE_URL'];
     delete process.env['GEMINI_CLIENT_CERT'];
     delete process.env['GEMINI_CLIENT_KEY'];
+    delete process.env['GEMINI_CLIENT_CA'];
 
     setDefaultBaseUrls({});
   });
@@ -476,6 +477,102 @@ describe('Client', () => {
         },
       });
       expect(client['httpOptions']?.dispatcher).toBe(customDispatcher);
+    });
+
+    it('should configure mTLS agent with CA certificate when all three files are provided', () => {
+      // Create temporary certificate, key, and CA files
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtls-test-'));
+      const certPath = path.join(tmpDir, 'cert.pem');
+      const keyPath = path.join(tmpDir, 'key.pem');
+      const caPath = path.join(tmpDir, 'ca.pem');
+
+      // Write dummy certificate, key, and CA
+      fs.writeFileSync(
+        certPath,
+        '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----',
+      );
+      fs.writeFileSync(
+        keyPath,
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----',
+      );
+      fs.writeFileSync(
+        caPath,
+        '-----BEGIN CERTIFICATE-----\nca-test\n-----END CERTIFICATE-----',
+      );
+
+      try {
+        process.env['GEMINI_CLIENT_CERT'] = certPath;
+        process.env['GEMINI_CLIENT_KEY'] = keyPath;
+        process.env['GEMINI_CLIENT_CA'] = caPath;
+
+        const client = new GoogleGenAI({});
+
+        expect(client['httpOptions']?.dispatcher).toBeDefined();
+        expect(client['httpOptions']?.dispatcher).toBeInstanceOf(https.Agent);
+      } finally {
+        // Clean up
+        fs.rmSync(tmpDir, {recursive: true});
+      }
+    });
+
+    it('should configure mTLS agent without CA certificate when CA is not provided', () => {
+      // Create temporary certificate and key files (no CA)
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtls-test-'));
+      const certPath = path.join(tmpDir, 'cert.pem');
+      const keyPath = path.join(tmpDir, 'key.pem');
+
+      // Write dummy certificate and key
+      fs.writeFileSync(
+        certPath,
+        '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----',
+      );
+      fs.writeFileSync(
+        keyPath,
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----',
+      );
+
+      try {
+        process.env['GEMINI_CLIENT_CERT'] = certPath;
+        process.env['GEMINI_CLIENT_KEY'] = keyPath;
+        // GEMINI_CLIENT_CA is not set
+
+        const client = new GoogleGenAI({});
+
+        expect(client['httpOptions']?.dispatcher).toBeDefined();
+        expect(client['httpOptions']?.dispatcher).toBeInstanceOf(https.Agent);
+      } finally {
+        // Clean up
+        fs.rmSync(tmpDir, {recursive: true});
+      }
+    });
+
+    it('should throw error when GEMINI_CLIENT_CA file does not exist', () => {
+      // Create temporary certificate and key files
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mtls-test-'));
+      const certPath = path.join(tmpDir, 'cert.pem');
+      const keyPath = path.join(tmpDir, 'key.pem');
+
+      fs.writeFileSync(
+        certPath,
+        '-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----',
+      );
+      fs.writeFileSync(
+        keyPath,
+        '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----',
+      );
+
+      try {
+        process.env['GEMINI_CLIENT_CERT'] = certPath;
+        process.env['GEMINI_CLIENT_KEY'] = keyPath;
+        process.env['GEMINI_CLIENT_CA'] = '/nonexistent/ca.pem';
+
+        expect(() => {
+          new GoogleGenAI({});
+        }).toThrowError(/Failed to load mTLS certificates/);
+      } finally {
+        // Clean up
+        fs.rmSync(tmpDir, {recursive: true});
+      }
     });
   });
 });

@@ -232,7 +232,8 @@ function getApiKeyFromEnv(): string | undefined {
 
 /**
  * Creates an mTLS-enabled HTTPS agent if GEMINI_CLIENT_CERT and GEMINI_CLIENT_KEY
- * environment variables are set.
+ * environment variables are set. Optionally reads a CA certificate from
+ * GEMINI_CLIENT_CA if provided.
  *
  * @returns An HTTPS agent configured with client certificates, or undefined if
  * environment variables are not set.
@@ -240,6 +241,7 @@ function getApiKeyFromEnv(): string | undefined {
 function createMtlsAgent(): https.Agent | undefined {
   const certPath = getEnv('GEMINI_CLIENT_CERT');
   const keyPath = getEnv('GEMINI_CLIENT_KEY');
+  const caPath = getEnv('GEMINI_CLIENT_CA');
 
   if (!certPath || !keyPath) {
     return undefined;
@@ -248,10 +250,12 @@ function createMtlsAgent(): https.Agent | undefined {
   try {
     const cert = fs.readFileSync(certPath);
     const key = fs.readFileSync(keyPath);
+    const ca = caPath ? fs.readFileSync(caPath) : undefined;
 
     return new https.Agent({
       cert,
       key,
+      ca,
       // Keep connections alive for better performance
       keepAlive: true,
     });
