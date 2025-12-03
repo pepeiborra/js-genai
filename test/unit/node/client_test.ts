@@ -464,9 +464,7 @@ describe('Client', () => {
         expect(client['httpOptions']?.dispatcher).toBeInstanceOf(https.Agent);
       } finally {
         // Clean up
-        fs.unlinkSync(certPath);
-        fs.unlinkSync(keyPath);
-        fs.rmdirSync(tmpDir);
+        fs.rmSync(tmpDir, {recursive: true});
       }
     });
 

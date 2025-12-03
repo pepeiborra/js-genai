@@ -472,7 +472,7 @@ export class ApiClient {
       );
     }
     if (httpOptions && httpOptions.dispatcher) {
-      // @ts-expect-error dispatcher is not in the base RequestInit type but is supported in Node.js
+      // @ts-expect-error dispatcher is a Node.js specific extension to RequestInit, see https://nodejs.org/api/undici.html#dispatcher
       requestInit.dispatcher = httpOptions.dispatcher;
     }
     requestInit.headers = await this.getHeadersInternal(httpOptions, url);
