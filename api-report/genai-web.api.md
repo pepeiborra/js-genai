@@ -2025,6 +2025,7 @@ export interface HttpOptions {
     apiVersion?: string;
     baseUrl?: string;
     baseUrlResourceScope?: ResourceScope;
+    dispatcher?: unknown;
     extraBody?: Record<string, unknown>;
     headers?: Record<string, string>;
     retryOptions?: HttpRetryOptions;
