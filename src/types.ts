@@ -2018,6 +2018,9 @@ export declare interface HttpOptions {
   extraBody?: Record<string, unknown>;
   /** HTTP retry options for the request. */
   retryOptions?: HttpRetryOptions;
+  /** Undici dispatcher for custom HTTP agent configuration (Node.js only).
+      This can be used to configure mTLS with client certificates. */
+  dispatcher?: unknown;
 }
 
 /** Schema is used to define the format of input/output data.
